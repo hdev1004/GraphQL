@@ -89,4 +89,6 @@ deleteTweet(_, {id}) {
 }
 ```
 
-Thank you!
+<br>
+
+<b>Thank you!</b>
