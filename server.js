@@ -1,42 +1,35 @@
 import { ApolloServer, gql } from "apollo-server";
 import fetch from "node-fetch";
 
-let tweets = [
-    {
-        id: "1",
-        text: "first one!",
-        userId: "2"
-    },
-    {
-        id: "2",
-        text: "second one!",
-        userId: "1"
-    },
-]
+import connection from "./db.js";
+import { promisify } from 'util';
 
-let users = [
-    {
-        id: "1",
-        firstName: "nico",
-        lastName: "las"
-    },
-    {
-        id: "2",
-        firstName: "jinwon",
-        lastName: "kim"
-    }
-]
+import * as userGET from "./get/user.js";
+import * as tweetGet from "./get/tweet.js";
+
+import * as tweetPost from "./post/tweet.js";
+
+import * as tweetDel from "./delete/tweet.js";
+
+const query = promisify(connection.query).bind(connection);
+
+const loaded = async () => {
+    const server = new ApolloServer({ typeDefs, resolvers })
+
+    server.listen().then(({url}) => {
+        console.log(`Running on ${url}`)
+    })
+}
 
 const typeDefs = gql`
-
     type User {
         id: ID,
-        firstName: String!
-        lastName: String!
+        name: String!
         """
            Is the sum of firstName + lastName as a String 
         """
-        fullName: String!
+        age: String!
+        fullInfo: String!
     }
 
     """
@@ -53,6 +46,7 @@ const typeDefs = gql`
         allTweets: [Tweet!]!
         allUsers: [User!]!
         allMovies: [Movie!]!
+        user(id: ID!): User 
         tweet(id: ID!): Tweet
         movie(id: String!): Movie
     }
@@ -91,16 +85,23 @@ const typeDefs = gql`
 `
 
 const resolvers = {
+    
     Query: {
-        allTweets() {
-            return tweets;
+        async tweet(root, {id}) {
+            let data = await tweetGet.getTweet(query, id);
+            return data;
         },
-        allUsers() {
-            console.log("allUsers called!");
-            return users;
+        async allTweets() {
+            let data = await tweetGet.getAllTweets(query);
+            return data;
         },
-        tweet(root, {id}) {
-            return tweets.find((tweet) => tweet.id === id);
+        async user(_, {id}) {
+            let data = await userGET.getUser(query, id);
+            return data;
+        },
+        async allUsers() {
+            let data = await userGET.getAllUsers(query);
+            return data;
         },
         allMovies() {
             return fetch("https://yts.mx/api/v2/list_movies.json")
@@ -114,36 +115,31 @@ const resolvers = {
         }
     },
     Mutation: {
-        postTweet(_, {text, userId}) {
+        async postTweet(_, {text, userId}) {
+            let res = await tweetPost.postTweet(query, text, userId);
             const newTweet = {
-                id: tweets.length + 1,
-                text,
+                id: "new id",
+                text: res ? text : "error"
             };
-            tweets.push(newTweet);
             return newTweet;
         },
-        deleteTweet(_, {id}) {
-            const tweet = tweets.find(tweet => tweet.id === id);
-            if(!tweet) return false;
-            tweets = tweets.filter(tweet => tweet.id !== id)
-            return true;
+        async deleteTweet(_, {id}) {
+            let data = await tweetDel.deleteTweet(query, id);
+            return data;
         }
     },
     User: { //이렇게 전역으로 해줄 수 있음
-        fullName({firstName, lastName}) { //root를 쓰면 전역에서 부른 객체 값을 가져올 수 있음, 또는 {}로 가져올 수 있음
-            return `${firstName} ${lastName}`
+        fullInfo({id, name, age}) { //root를 쓰면 전역에서 부른 객체 값을 가져올 수 있음, 또는 {}로 가져올 수 있음
+            return `${id} ${name} ${age}`
         }
     },
     Tweet: {
-        author({userId}) {
-            return users.find(user => user.id === userId)
+        async author({userId}) { //tweet 함수에서 받은 데이터 정보를 토대로 확인
+            let data = await userGET.getUser(query, userId);
+            return data
         }
     }
 }
 
+loaded();
 
-const server = new ApolloServer({ typeDefs, resolvers })
-
-server.listen().then(({url}) => {
-    console.log(`Running on ${url}`)
-})
