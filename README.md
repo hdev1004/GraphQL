@@ -24,9 +24,26 @@ Node JS와 Apollo Server를 이용해 GraphQL의 설계 규칙을 반영하여 �
 
 <br>
 
+## 📕파일 구조
+
+```arduino
+📂 /
+  ├── 📜 server.js
+  ├── 📜 db.js
+  ├── 📂 get/
+  │   └── 📜 tweet.js
+  │   └── 📜 user.js
+  ├── 📂 post/
+  │   └── 📜 tweet.js
+  └── 📂 delete/
+      └── 📜 tweet.js
+```
+
+<br>
+
 ## 📕Usage
 
-필수 요구사항 : `nodeJS`
+필수 요구사항 : `nodeJS`, `Mysql`
 
 다운로드 - `git clone https://github.com/hdev1004/GraphQL.git`
 
