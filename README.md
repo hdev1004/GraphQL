@@ -34,10 +34,47 @@ Node JS와 Apollo Server를 이용해 GraphQL의 설계 규칙을 반영하여 �
 
 ### 📖 Ready
 
-현재는 Mysql을 사용하지 않고, 로컬 변수로 진행하였음.
+`2023.05.05`
 
-추후 다른 언어 및 Mysql을 추가할 예정.
+~~현재는 Mysql을 사용하지 않고, 로컬 변수로 진행하였음.~~
 
+~~추후 다른 언어 및 Mysql을 추가할 예정.~~
+
+<br>
+
+`2023.05.14`
+
+Mysql 사용하여, CRUD 기능 추가
+
+<br>
+
+`users 테이블`
+
+```mysql
+CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(10) DEFAULT NULL,
+  `age` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+)
+```
+
+<br>
+
+`writing 테이블`
+```mysql
+CREATE TABLE `writing` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `text` varchar(100) DEFAULT NULL,
+  `userId` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
+```
+
+<br>
+
+
+`실행 준비`
 ```
 npm i
 npm run dev
@@ -65,7 +102,8 @@ type Mutation {
 
 postTweet
 
-```
+```javascript
+//변경전
 postTweet(_, {text, userId}) {
     const newTweet = {
         id: tweets.length + 1,
@@ -74,18 +112,36 @@ postTweet(_, {text, userId}) {
     tweets.push(newTweet);
     return newTweet;
 }
+
+//변경후
+async postTweet(_, {text, userId}) {
+    let res = await tweetPost.postTweet(query, text, userId);
+    const newTweet = {
+        id: "new id",
+        text: res ? text : "error"
+    };
+    return newTweet;
+}
+
 ```
 
 <br>
 
 deleteTweet
 
-```
+```javascript
+//변경전
 deleteTweet(_, {id}) {
     const tweet = tweets.find(tweet => tweet.id === id);
     if(!tweet) return false;
     tweets = tweets.filter(tweet => tweet.id !== id)
     return true;
+}
+
+//변경후
+async deleteTweet(_, {id}) {
+    let data = await tweetDel.deleteTweet(query, id);
+    return data;
 }
 ```
 
